@@ -89,7 +89,7 @@ def multi_line_input():
 
 if __name__ == '__main__':
     # instantiate chatbot
-    openai.api_key = open_file('key_openai.txt')
+    openai.api_key = open_file('key_openai.txt').strip()
     ALL_MESSAGES = list()
     print('\n\n****** IMPORTANT: ******\n\nType SCRATCHPAD to enter multi line input mode to update scratchpad. Type END to save and exit.')
     
