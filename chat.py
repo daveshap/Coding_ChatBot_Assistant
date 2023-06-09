@@ -1,6 +1,7 @@
 import openai
 from time import time, sleep
 import textwrap
+import sys
 
 
 ###     file operations
@@ -27,6 +28,8 @@ def open_file(filepath):
         return infile.read()
 
 
+###     API functions
+
 
 def chatbot(conversation, model="gpt-4", temperature=0):
     max_retry = 7
@@ -50,20 +53,54 @@ def chatbot(conversation, model="gpt-4", temperature=0):
             sleep(2 ** (retry - 1) * 5)
 
 
+###     MAIN LOOP
+
+a = '''def multi_line_input():
+    print('\n\n\nUSER:\n')
+    lines = []
+    while True:
+        try:
+            line = input()
+            if sys.stdin.isatty():
+                # If in a terminal, check for Ctrl+Enter by checking if line is empty
+                if not line:
+                    break
+            else:
+                # If not in a terminal (e.g., piping input), break on EOF
+                if not line:
+                    break
+            lines.append(line)
+        except KeyboardInterrupt:
+            # Ctrl+Enter will raise a KeyboardInterrupt, so we break the loop
+            break
+    return "\n".join(lines).strip()'''
+
+
+def multi_line_input():
+    print('\n\n\nType END to save and exit.\n[MULTI] USER:\n')
+    lines = []
+    while True:
+        line = input()
+        if line == "END":
+            break
+        lines.append(line)
+    return "\n".join(lines)
 
 
 if __name__ == '__main__':
     # instantiate chatbot
     openai.api_key = open_file('key_openai.txt')
     ALL_MESSAGES = list()
+    print('\n\n****** IMPORTANT: ******\n\nType SCRATCHPAD to enter multi line input mode to update scratchpad. Type END to save and exit.')
     
     while True:
         # get user input
-        text = input('\n\n\n\nUSER: ').strip()
+        text = input('\n\n\n[NORMAL] USER:\n')
         
         # check if scratchpad updated, continue
         if 'SCRATCHPAD' in text:
-            save_file('scratchpad.txt', text.replace('SCRATCHPAD', '').strip())
+            text = multi_line_input()
+            save_file('scratchpad.txt', text.strip('END').strip())
             print('\n\n#####      Scratchpad updated!')
             continue
         if text == '':
@@ -78,9 +115,11 @@ if __name__ == '__main__':
         conversation.append({'role': 'system', 'content': system_message})
 
         # generate a response
-        response = chatbot(conversation)
+        response, tokens = chatbot(conversation)
+        if tokens > 7500:
+            ALL_MESSAGES.pop(0)
         ALL_MESSAGES.append({'role': 'assistant', 'content': response})
         print('\n\n\n\nCHATBOT:')
-        #formatted_text = textwrap.fill(response, width=100, initial_indent='    ', subsequent_indent='    ')
-        formatted_text = textwrap.fill(response, width=120)
+        formatted_lines = [textwrap.fill(line, width=120) for line in response.split('\n')]
+        formatted_text = '\n'.join(formatted_lines)
         print(formatted_text)
