@@ -30,9 +30,20 @@ Enjoy your conversation with the chatbot and make use of the scratchpad to provi
 
 ## Example Output:
 
-Below is an example output from the chatbot. It uses a combination of textwrap and newlines to ensure code is preserved in console output but not too wide
+Below is an example output from the chatbot. It uses a combination of textwrap and newlines to ensure code is preserved in console output but not too wide. Note, the scratchpad was previously updated with another python script. You can see that this was able to understand the code and request well enough to understand what other functions were necessary.
 
 ``````
+****** IMPORTANT: ******
+
+Type SCRATCHPAD to enter multi line input mode to update scratchpad. Type END to save and exit.
+
+
+
+[NORMAL] USER:
+write a new search_kb function. assume that each KB article is a YAML file in a folder called kb. the elements in the KB ar article and vector. vector is a high dimensional semantic embedding that can be used to calculate cosine similarity with numpy. we will be using Google USEv5 for the embeddings
+
+
+
 CHATBOT:
 First, let's import the necessary libraries:
 
