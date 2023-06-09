@@ -55,26 +55,6 @@ def chatbot(conversation, model="gpt-4", temperature=0):
 
 ###     MAIN LOOP
 
-a = '''def multi_line_input():
-    print('\n\n\nUSER:\n')
-    lines = []
-    while True:
-        try:
-            line = input()
-            if sys.stdin.isatty():
-                # If in a terminal, check for Ctrl+Enter by checking if line is empty
-                if not line:
-                    break
-            else:
-                # If not in a terminal (e.g., piping input), break on EOF
-                if not line:
-                    break
-            lines.append(line)
-        except KeyboardInterrupt:
-            # Ctrl+Enter will raise a KeyboardInterrupt, so we break the loop
-            break
-    return "\n".join(lines).strip()'''
-
 
 def multi_line_input():
     print('\n\n\nType END to save and exit.\n[MULTI] USER:\n')
@@ -119,7 +99,7 @@ if __name__ == '__main__':
         if tokens > 7500:
             ALL_MESSAGES.pop(0)
         ALL_MESSAGES.append({'role': 'assistant', 'content': response})
-        print('\n\n\n\nCHATBOT:')
+        print('\n\n\n\nCHATBOT:\n')
         formatted_lines = [textwrap.fill(line, width=120) for line in response.split('\n')]
         formatted_text = '\n'.join(formatted_lines)
         print(formatted_text)
