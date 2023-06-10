@@ -1,6 +1,8 @@
 # Coding Chatbot with Scratchpad
 
-This Python script is a command-line interface for interacting with OpenAI's GPT-4 model. It allows users to have a conversation with the chatbot and update a scratchpad with relevant information that the chatbot can use to provide more accurate and context-aware responses.
+This Python script is a command-line interface for interacting with OpenAI's GPT-4 model. 
+It allows users to have a conversation with the chatbot and update a scratchpad 
+with relevant information that the chatbot can use to provide more accurate and context-aware responses.
 
 ## Features
 
