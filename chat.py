@@ -165,7 +165,7 @@ def multi_line_input():
 
 def get_user_input():
     # get user input
-    print(f'\n\n\n{MODEL_NAME} as [NORMAL]\n')
+    print(f'\n\n\nUsing [{MODEL_NAME}] as ChatBot, enter the')
     text = input(f'USER PROMPT: ')
     if 'SCRATCHPAD' == text or 'M' == text:
         text = multi_line_input()
