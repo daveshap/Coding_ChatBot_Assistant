@@ -1,13 +1,23 @@
+import json
+
 import openai
 from time import time, sleep
 import textwrap
 import os
 from datetime import datetime
 
+MODEL_NAME = "gpt-4"
+# MODEL_NAME = "gpt-3.5-turbo"
+MODEL_TEMPERATURE = 0.1
+MODEL_MAX_TOKENS = 7500
+
 
 ###     logging for debug functions
 
 def save_humanreadable_log(conversation, suffix=""):
+    if isinstance(conversation, dict) and "choices" in conversation:
+        conversation = conversation["choices"][0]["message"]
+
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     log_dir = "log/openai"
     if not os.path.exists(log_dir):
@@ -21,17 +31,22 @@ def save_humanreadable_log(conversation, suffix=""):
                 print(f"Skipping message due to missing 'role' or 'content': {message}")
 
 
+def pretty_print_json(conversation):
+    try:
+        parsed_json = json.loads(str(conversation))
+        pretty_json = json.dumps(parsed_json, indent=4, sort_keys=True)
+        return pretty_json
+    except json.JSONDecodeError:
+        return conversation
+
+
 def save_json_log(conversation, suffix=""):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     log_dir = "log/openai"
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
     log_file = os.path.join(log_dir, f"{timestamp}{suffix}.json")
-
-    # make conversation more readable
-    conversation = str(conversation).replace('},', '},\n')
-    # conversation = str(conversation).replace('\\n', '\\n\n')
-
+    conversation = pretty_print_json(conversation)
     with open(log_file, "w", encoding="utf-8") as f:
         f.write(str(conversation))
 
@@ -106,7 +121,7 @@ def multi_line_input():
 
 def get_user_input():
     # get user input
-    text = input('\n\n\n[NORMAL] USER:\n')
+    text = input(f'\n\n\n{MODEL_NAME}: [NORMAL] USER:\n')
     if 'SCRATCHPAD' == text or 'M' == text:
         text = multi_line_input()
         save_file('scratchpad.txt', text.strip('END').strip())
@@ -146,9 +161,8 @@ def main():
         conversation.append({'role': 'system', 'content': system_message})
 
         # generate a response
-        response, tokens = do_chatbot_conversation_exchange(conversation, "gpt-4", 0.1)
-        # response, tokens = do_chatbot_conversation_exchange(conversation, "gpt-3.5-turbo", 0.5)
-        if tokens > 7500:
+        response, tokens = do_chatbot_conversation_exchange(conversation, MODEL_NAME, MODEL_TEMPERATURE)
+        if tokens > MODEL_MAX_TOKENS:
             ALL_MESSAGES.pop(0)
         ALL_MESSAGES.append({'role': 'assistant', 'content': response})
         print_chatbot_response(response)
