@@ -1,13 +1,13 @@
 import json
-
-import openai
-from time import time, sleep
-import textwrap
 import os
+import textwrap
+import time
 from datetime import datetime
 
-MODEL_NAME = "gpt-4"
-# MODEL_NAME = "gpt-3.5-turbo"
+import openai
+
+# MODEL_NAME = "gpt-4"
+MODEL_NAME = "gpt-3.5-turbo"
 MODEL_TEMPERATURE = 0.1
 MODEL_MAX_TOKENS = 7500
 
@@ -87,10 +87,20 @@ def do_chatbot_conversation_exchange(conversation, model="gpt-4", temperature=0.
 
     for retry in range(max_retry):
         try:
+            start_time = time.time()
+            print("Processing...")
+
             response = get_response(conversation, model, temperature)
             text = response['choices'][0]['message']['content']
             total_tokens = response['usage']['total_tokens']
+
             save_json_log(response, f'_{total_tokens}_response')
+            save_humanreadable_log(response, f"_{total_tokens}_response")
+
+            end_time = time.time()
+            processing_time = end_time - start_time
+            print(f"Processing done. Time taken: {processing_time:.2f} seconds")
+
             return text, total_tokens
         except Exception as oops:
             should_continue, conversation = handle_error(oops, conversation)
