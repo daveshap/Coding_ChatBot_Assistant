@@ -3,6 +3,8 @@ import os
 import textwrap
 import time
 from datetime import datetime
+from typing import Any, Union
+from typing import List, Tuple
 
 import openai
 
@@ -31,22 +33,30 @@ def save_humanreadable_log(conversation, suffix=""):
                 print(f"Skipping message due to missing 'role' or 'content': {message}")
 
 
-def pretty_print_json(conversation):
+def pretty_print_json(conversation: Any) -> Union[str, Any]:
+    """
+    Convert a Python object to a pretty-printed JSON string.
+
+    Args:
+        conversation (Any): The Python object to convert.
+
+    Returns:
+        Union[str, Any]: The pretty-printed JSON string, or the original object if it cannot be converted.
+    """
     try:
-        parsed_json = json.loads(str(conversation))
-        pretty_json = json.dumps(parsed_json, indent=4, sort_keys=True)
-        return pretty_json
-    except json.JSONDecodeError:
+        return json.dumps(conversation, indent=4, sort_keys=True)
+    except Exception:
         return conversation
 
 
-def save_json_log(conversation, suffix=""):
+def save_json_log(conversation, suffix, pretty_print=True):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     log_dir = "log/openai"
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
     log_file = os.path.join(log_dir, f"{timestamp}{suffix}.json")
-    conversation = pretty_print_json(conversation)
+    if pretty_print:
+        conversation = pretty_print_json(conversation)
     with open(log_file, "w", encoding="utf-8") as f:
         f.write(str(conversation))
 
@@ -78,8 +88,10 @@ def handle_error(error, conversation):
     return False, conversation
 
 
-def do_chatbot_conversation_exchange(conversation, model="gpt-4", temperature=0.0):
-    max_retry = 7
+def do_chatbot_conversation_exchange(
+        conversation: List[dict], model: str = "gpt-4", temperature: float = 0.0,
+) -> Tuple[str, int]:
+    max_retry: int = 7
 
     # Save the conversation to a log file
     save_json_log(conversation, f'_{model}_request')
@@ -94,7 +106,7 @@ def do_chatbot_conversation_exchange(conversation, model="gpt-4", temperature=0.
             text = response['choices'][0]['message']['content']
             total_tokens = response['usage']['total_tokens']
 
-            save_json_log(response, f'_{total_tokens}_response')
+            save_json_log(response, f'_{total_tokens}_response', False)
             save_humanreadable_log(response, f"_{total_tokens}_response")
 
             end_time = time.time()
