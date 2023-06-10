@@ -14,17 +14,19 @@ MODEL_TEMPERATURE = 0.1
 MODEL_MAX_TOKENS = 7500
 
 
-###     logging for debug functions
+# Section:    logging for debug functions
 
-def save_request_as_humanreadable_text(conversation, suffix=""):
-    if isinstance(conversation, dict) and "choices" in conversation:
-        conversation = conversation["choices"]
-
+def create_log_file(suffix: str) -> str:
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     log_dir = "log/openai"
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
     log_file = os.path.join(log_dir, f"{timestamp}{suffix}.txt")
+    return log_file
+
+
+def save_request_as_humanreadable_text(conversation, suffix=""):
+    log_file = create_log_file(suffix)
     with open(log_file, "w", encoding="utf-8") as f:
         for message in conversation:
             if 'role' in message and 'content' in message:
@@ -34,13 +36,8 @@ def save_request_as_humanreadable_text(conversation, suffix=""):
 
 
 def save_response_as_humanreadable_text(response, suffix=""):
+    log_file = create_log_file(suffix)
     conversation: List[dict] = response["choices"]
-
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_dir = "log/openai"
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
-    log_file = os.path.join(log_dir, f"{timestamp}{suffix}.txt")
     with open(log_file, "w", encoding="utf-8") as f:
         for message in conversation:
             message = message["message"]
@@ -74,8 +71,7 @@ def save_json_log(conversation, suffix, pretty_print=True):
     log_file = os.path.join(log_dir, f"{timestamp}{suffix}.json")
     if pretty_print:
         conversation = pretty_print_json(conversation)
-    with open(log_file, "w", encoding="utf-8") as f:
-        f.write(str(conversation))
+    save_file(log_file, str(conversation))
 
 
 ###     file operations
@@ -90,7 +86,7 @@ def open_file(filepath):
         return infile.read()
 
 
-###     API functions
+# Section:     API functions
 
 def get_response(conversation, model, temperature):
     return openai.ChatCompletion.create(model=model, messages=conversation, temperature=temperature)
@@ -123,11 +119,12 @@ def do_chatbot_conversation_exchange(
             text = response['choices'][0]['message']['content']
             total_tokens = response['usage']['total_tokens']
 
-            save_json_log(response, f'_{total_tokens}_response', False)
-            save_response_as_humanreadable_text(response, f"_{total_tokens}_response")
-
             end_time = time.time()
             processing_time = end_time - start_time
+
+            save_json_log(response, f'_{total_tokens}_response', False)
+            # TODO add processing time, and model name in the response file
+            save_response_as_humanreadable_text(response, f"_{total_tokens}_response")
 
             return text, total_tokens, processing_time
         except Exception as oops:
@@ -159,7 +156,8 @@ def multi_line_input():
 
 def get_user_input():
     # get user input
-    text = input(f'\n\n\nPROMPT for {MODEL_NAME} as [NORMAL] USER:\n')
+    print(f'\n\n\n{MODEL_NAME} as [NORMAL]\n')
+    text = input(f'USER PROMPT: ')
     if 'SCRATCHPAD' == text or 'M' == text:
         text = multi_line_input()
         save_file('scratchpad.txt', text.strip('END').strip())
@@ -169,7 +167,7 @@ def get_user_input():
 
 
 def print_chatbot_response(response, total_tokens, processing_time):
-    print('\n\n\n\nCHATBOT:\n')
+    print('\n\n\n\nCHATBOT response:\n')
     formatted_lines = [textwrap.fill(line, width=120) for line in response.split('\n')]
     formatted_text = '\n'.join(formatted_lines)
     print(formatted_text)
