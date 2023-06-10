@@ -32,7 +32,7 @@ def create_log_file(suffix: str) -> str:
     return log_file
 
 
-def save_request_as_humanreadable_text(conversation, suffix):
+def save_request_as_human_readable_text(conversation, suffix):
     log_file = create_log_file(suffix)
     human_readable_text = ""
     for message in conversation:
@@ -40,10 +40,10 @@ def save_request_as_humanreadable_text(conversation, suffix):
             human_readable_text += f"# {message['role'].upper()}:\n{message['content']}\n\n"
         else:
             print(f"Skipping message due to missing 'role' or 'content': {message}")
-    save_file(log_file, human_readable_text)
+    save_content_to_file(log_file, human_readable_text)
 
 
-def save_response_as_humanreadable_text(response, total_tokens, duration, suffix=""):
+def save_response_as_human_readable_text(response, total_tokens, duration, suffix=""):
     log_file = create_log_file(suffix)
     conversation: List[dict] = response["choices"]
     human_readable_text = f"- Model      : {app_state.MODEL_NAME}\n"
@@ -57,7 +57,7 @@ def save_response_as_humanreadable_text(response, total_tokens, duration, suffix
             human_readable_text += f"# {message['role'].upper()}:\n{message['content']}\n\n"
         else:
             print(f"Skipping message due to missing 'role' or 'content': {message}")
-    save_file(log_file, human_readable_text)
+    save_content_to_file(log_file, human_readable_text)
 
 
 def pretty_print_json(conversation: Any) -> Union[str, Any]:
@@ -75,24 +75,24 @@ def save_json_log(conversation, suffix, pretty_print=True):
     log_file = os.path.join(log_dir, f"{timestamp}{suffix}.json")
     if pretty_print:
         conversation = pretty_print_json(conversation)
-    save_file(log_file, str(conversation))
+    save_content_to_file(log_file, str(conversation))
 
 
 # Section:     file operations
 
-def save_file(filepath, content):
+def save_content_to_file(filepath, content):
     with open(filepath, 'w', encoding='utf-8') as outfile:
         outfile.write(content)
 
 
-def open_file(filepath):
+def read_file_content(filepath):
     with open(filepath, 'r', encoding='utf-8', errors='ignore') as infile:
         return infile.read()
 
 
 # Section:     API functions
 
-def get_response(conversation: List[dict]) -> dict:
+def fetch_chatbot_response(conversation: List[dict]) -> dict:
     return openai.ChatCompletion.create(
         model=app_state.MODEL_NAME,
         messages=conversation,
@@ -110,19 +110,19 @@ def handle_error(error, conversation):
     return False, conversation
 
 
-def do_chatbot_conversation_exchange(conversation: List[dict]) -> tuple[Any, Any, float]:
+def perform_chatbot_conversation(conversation: List[dict]) -> tuple[Any, Any, float]:
     max_retry: int = 7
 
     # Save the conversation to a log file
     save_json_log(conversation, f'_{app_state.MODEL_NAME}_request')
-    save_request_as_humanreadable_text(conversation, f"_{app_state.MODEL_NAME}_request.md")
+    save_request_as_human_readable_text(conversation, f"_{app_state.MODEL_NAME}_request.md")
 
     for retry in range(max_retry):
         try:
             start_time = time.time()
             print("INFO: Processing...")
 
-            response = get_response(conversation)
+            response = fetch_chatbot_response(conversation)
             text = response['choices'][0]['message']['content']
             total_tokens = response['usage']['total_tokens']
 
@@ -130,7 +130,7 @@ def do_chatbot_conversation_exchange(conversation: List[dict]) -> tuple[Any, Any
             processing_time = end_time - start_time
 
             save_json_log(response, f'_{total_tokens}_response', False)
-            save_response_as_humanreadable_text(
+            save_response_as_human_readable_text(
                 response, total_tokens, processing_time,
                 f"_{total_tokens}_response.md",
             )
@@ -171,7 +171,7 @@ def get_user_input():
         exit(0)
     if 'SCRATCHPAD' == text or 'M' == text:
         text = multi_line_input()
-        save_file('scratchpad.md', text.strip('END').strip())
+        save_content_to_file('scratchpad.md', text.strip('END').strip())
         print('\n\n#####      Scratchpad updated!')
         return None
     return text
@@ -187,7 +187,7 @@ def print_chatbot_response(response, total_tokens, processing_time):
 
 def main():
     # instantiate chatbot
-    openai.api_key = open_file('key_openai.txt').strip()
+    openai.api_key = read_file_content('key_openai.txt').strip()
 
     # parse arguments
     parser = argparse.ArgumentParser(description="Chatbot using OpenAI API")
@@ -220,13 +220,13 @@ def main():
 
         # continue with composing conversation and response
         app_state.ALL_MESSAGES.append({'role': 'user', 'content': text})
-        system_message = open_file('system_message.txt').replace('<<CODE>>', open_file('scratchpad.md'))
+        system_message = read_file_content('system_message.txt').replace('<<CODE>>', read_file_content('scratchpad.md'))
         conversation = list()
         conversation += app_state.ALL_MESSAGES
         conversation.append({'role': 'system', 'content': system_message})
 
         # generate a response
-        response, tokens, processing_time = do_chatbot_conversation_exchange(conversation)
+        response, tokens, processing_time = perform_chatbot_conversation(conversation)
 
         if tokens > app_state.MODEL_MAX_TOKENS:
             app_state.ALL_MESSAGES.pop(0)
