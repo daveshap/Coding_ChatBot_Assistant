@@ -92,7 +92,7 @@ def read_file_content(filepath):
 
 # Section:     API functions
 
-def fetch_chatbot_response(conversation: List[dict]) -> dict:
+def get_chatbot_response(conversation: List[dict]) -> dict:
     return openai.ChatCompletion.create(
         model=app_state.MODEL_NAME,
         messages=conversation,
@@ -122,7 +122,7 @@ def perform_chatbot_conversation(conversation: List[dict]) -> tuple[Any, Any, fl
             start_time = time.time()
             print("INFO: Processing...")
 
-            response = fetch_chatbot_response(conversation)
+            response = get_chatbot_response(conversation)
             text = response['choices'][0]['message']['content']
             total_tokens = response['usage']['total_tokens']
 
