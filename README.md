@@ -20,8 +20,14 @@ Enjoy your conversation with the chatbot and make use of the scratchpad to provi
 
 ## Setup
 
-1. Install OpenAI if not already, should have no other dependencies: `pip install openai --upgrade`
+1. Install OpenAI if not already, should have no other dependencies: `pip install openai --upgrade`, or alternatively see instructions below for virtual environment setup.
 2. Create `key_openai.txt` and populate your OpenAI key. Note, you need to have access to GPT-4 API. Note, some operating systems require 
+
+### Setup using virtual environment
+1. cd into the project
+2. run `python3 -m venv .venv` - creates a folder that will isolate all the dependencies
+3. run `source .venv/bin/activate` (on linux) - activates the virtual environment
+4. run `pip install -r requirements.txt` - installs all the dependencies
 
 ## Usage
 

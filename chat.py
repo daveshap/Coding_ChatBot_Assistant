@@ -2,6 +2,7 @@ import openai
 from time import time, sleep
 import textwrap
 import sys
+import yaml
 
 
 ###     file operations
@@ -30,27 +31,38 @@ def open_file(filepath):
 
 ###     API functions
 
+def get_response(conversation, model, temperature):
+    return openai.ChatCompletion.create(model=model, messages=conversation, temperature=temperature)
+
+
+def handle_error(error, conversation):
+    print(f'\n\nError communicating with OpenAI: "{error}"')
+    if 'maximum context length' in str(error):
+        conversation.pop(0)
+        print('\n\n DEBUG: Trimming oldest message')
+        return True, conversation
+    return False, conversation
+
 
 def chatbot(conversation, model="gpt-4", temperature=0):
     max_retry = 7
-    retry = 0
-    while True:
+
+    for retry in range(max_retry):
         try:
-            response = openai.ChatCompletion.create(model=model, messages=conversation, temperature=temperature)
+            response = get_response(conversation, model, temperature)
             text = response['choices'][0]['message']['content']
             return text, response['usage']['total_tokens']
         except Exception as oops:
-            print(f'\n\nError communicating with OpenAI: "{oops}"')
-            if 'maximum context length' in str(oops):
-                a = conversation.pop(0)
-                print('\n\n DEBUG: Trimming oldest message')
+            should_continue, conversation = handle_error(oops, conversation)
+            if not should_continue:
+                wait_time = 2 ** retry * 5
+                print(f'\n\nRetrying in {wait_time} seconds...')
+                time.sleep(wait_time)
+            else:
                 continue
-            retry += 1
-            if retry >= max_retry:
-                print(f"\n\nExiting due to excessive errors in API: {oops}")
-                exit(1)
-            print(f'\n\nRetrying in {2 ** (retry - 1) * 5} seconds...')
-            sleep(2 ** (retry - 1) * 5)
+
+    print(f"\n\nExiting due to excessive errors in API.")
+    exit(1)
 
 
 ###     MAIN LOOP
@@ -67,26 +79,40 @@ def multi_line_input():
     return "\n".join(lines)
 
 
-if __name__ == '__main__':
+def get_user_input():
+    # get user input
+    text = input('\n\n\n[NORMAL] USER:\n')
+    if 'SCRATCHPAD' in text:
+        text = multi_line_input()
+        save_file('scratchpad.txt', text.strip('END').strip())
+        print('\n\n#####      Scratchpad updated!')
+        return None
+    return text
+
+
+def print_chatbot_response(response):
+    print('\n\n\n\nCHATBOT:\n')
+    formatted_lines = [textwrap.fill(line, width=120) for line in response.split('\n')]
+    formatted_text = '\n'.join(formatted_lines)
+    print(formatted_text)
+
+
+def main():
     # instantiate chatbot
     openai.api_key = open_file('key_openai.txt').strip()
     ALL_MESSAGES = list()
-    print('\n\n****** IMPORTANT: ******\n\nType SCRATCHPAD to enter multi line input mode to update scratchpad. Type END to save and exit.')
-    
+    print("\n\n****** IMPORTANT ******\n"
+          "Type 'SCRATCHPAD' to enter multi-line input mode to update the scratchpad.\n"
+          "Type 'END' to save and exit.\n")
+
     while True:
-        # get user input
-        text = input('\n\n\n[NORMAL] USER:\n')
-        
-        # check if scratchpad updated, continue
-        if 'SCRATCHPAD' in text:
-            text = multi_line_input()
-            save_file('scratchpad.txt', text.strip('END').strip())
-            print('\n\n#####      Scratchpad updated!')
+        text = get_user_input()
+        if text is None:
             continue
         if text == '':
             # empty submission, probably on accident
             continue
-        
+
         # continue with composing conversation and response
         ALL_MESSAGES.append({'role': 'user', 'content': text})
         system_message = open_file('system_message.txt').replace('<<CODE>>', open_file('scratchpad.txt'))
@@ -99,7 +125,8 @@ if __name__ == '__main__':
         if tokens > 7500:
             ALL_MESSAGES.pop(0)
         ALL_MESSAGES.append({'role': 'assistant', 'content': response})
-        print('\n\n\n\nCHATBOT:\n')
-        formatted_lines = [textwrap.fill(line, width=120) for line in response.split('\n')]
-        formatted_text = '\n'.join(formatted_lines)
-        print(formatted_text)
+        print_chatbot_response(response)
+
+
+if __name__ == '__main__':
+    main()
