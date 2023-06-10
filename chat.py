@@ -9,10 +9,16 @@ from typing import List
 
 import openai
 
-MODEL_NAME = "gpt-4"
-# MODEL_NAME = "gpt-3.5-turbo"
-MODEL_TEMPERATURE = 0.1
-MODEL_MAX_TOKENS = 7500
+
+class AppState:
+    def __init__(self):
+        self.MODEL_NAME = "gpt-4"
+        self.MODEL_TEMPERATURE = 0.1
+        self.MODEL_MAX_TOKENS = 7500
+        self.ALL_MESSAGES = list()
+
+
+app_state = AppState()
 
 
 # Section:    logging for debug functions
@@ -40,8 +46,8 @@ def save_request_as_humanreadable_text(conversation, suffix=""):
 def save_response_as_humanreadable_text(response, total_tokens, duration, suffix=""):
     log_file = create_log_file(suffix)
     conversation: List[dict] = response["choices"]
-    human_readable_text = f"Model      : {MODEL_NAME}\n"
-    human_readable_text += f"Temperature: {MODEL_TEMPERATURE}\n"
+    human_readable_text = f"Model      : {app_state.MODEL_NAME}\n"
+    human_readable_text += f"Temperature: {app_state.MODEL_TEMPERATURE}\n"
     human_readable_text += f"Tokens     : {total_tokens}\n"
     human_readable_text += f"Duration   : {duration}\n"
     human_readable_text += "\n\n"
@@ -95,8 +101,13 @@ def open_file(filepath):
 
 # Section:     API functions
 
-def get_response(conversation, model, temperature):
-    return openai.ChatCompletion.create(model=model, messages=conversation, temperature=temperature)
+def get_response(conversation: List[dict]) -> dict:
+    return openai.ChatCompletion.create(
+        model=app_state.MODEL_NAME,
+        messages=conversation,
+        temperature=app_state.MODEL_TEMPERATURE,
+        # max_tokens=app_state.MODEL_MAX_TOKENS,
+    )
 
 
 def handle_error(error, conversation):
@@ -108,21 +119,19 @@ def handle_error(error, conversation):
     return False, conversation
 
 
-def do_chatbot_conversation_exchange(
-        conversation: List[dict], model: str = "gpt-4", temperature: float = 0.0,
-) -> tuple[Any, Any, float]:
+def do_chatbot_conversation_exchange(conversation: List[dict]) -> tuple[Any, Any, float]:
     max_retry: int = 7
 
     # Save the conversation to a log file
-    save_json_log(conversation, f'_{model}_request')
-    save_request_as_humanreadable_text(conversation, f"_{model}_request")
+    save_json_log(conversation, f'_{app_state.MODEL_NAME}_request')
+    save_request_as_humanreadable_text(conversation, f"_{app_state.MODEL_NAME}_request")
 
     for retry in range(max_retry):
         try:
             start_time = time.time()
             print("INFO: Processing...")
 
-            response = get_response(conversation, model, temperature)
+            response = get_response(conversation)
             text = response['choices'][0]['message']['content']
             total_tokens = response['usage']['total_tokens']
 
@@ -165,8 +174,10 @@ def multi_line_input():
 
 def get_user_input():
     # get user input
-    print(f'\n\n\nUsing [{MODEL_NAME}] as ChatBot, enter the')
-    text = input(f'USER PROMPT: ')
+    text = input(f'[{app_state.MODEL_NAME}] USER PROMPT: ')
+    if 'END' == text:
+        print('\n\nExiting...')
+        exit(0)
     if 'SCRATCHPAD' == text or 'M' == text:
         text = multi_line_input()
         save_file('scratchpad.txt', text.strip('END').strip())
@@ -180,7 +191,7 @@ def print_chatbot_response(response, total_tokens, processing_time):
     formatted_lines = [textwrap.fill(line, width=120) for line in response.split('\n')]
     formatted_text = '\n'.join(formatted_lines)
     print(formatted_text)
-    print(f'\n\nINFO: {MODEL_NAME}: {total_tokens} tokens, {processing_time:.2f} seconds')
+    print(f'\n\nINFO: {app_state.MODEL_NAME}: {total_tokens} tokens, {processing_time:.2f} seconds')
 
 
 def main():
@@ -189,20 +200,19 @@ def main():
 
     # parse arguments
     parser = argparse.ArgumentParser(description="Chatbot using OpenAI API")
-    parser.add_argument("--model", default=MODEL_NAME,
+    parser.add_argument("--model", default=app_state.MODEL_NAME,
                         help="Model name (default: %(default)s)")
-    parser.add_argument("--temperature", type=float, default=MODEL_TEMPERATURE,
+    parser.add_argument("--temperature", type=float, default=app_state.MODEL_TEMPERATURE,
                         help="Temperature (default: %(default)s)")
     args = parser.parse_args()
 
-    model_name = args.model
-    model_temperature = args.temperature
+    app_state.MODEL_NAME = args.model
+    app_state.MODEL_TEMPERATURE = args.temperature
 
     print("\n\n****** IMPORTANT ******\n"
           "Type 'SCRATCHPAD' or 'M' to enter multi-line input mode to update the scratchpad.\n"
           "Type 'END' to save and exit.\n")
 
-    ALL_MESSAGES = list()
     while True:
         text = get_user_input()
         if text is None:
@@ -212,20 +222,19 @@ def main():
             continue
 
         # continue with composing conversation and response
-        ALL_MESSAGES.append({'role': 'user', 'content': text})
+        app_state.ALL_MESSAGES.append({'role': 'user', 'content': text})
         system_message = open_file('system_message.txt').replace('<<CODE>>', open_file('scratchpad.txt'))
         conversation = list()
-        conversation += ALL_MESSAGES
+        conversation += app_state.ALL_MESSAGES
         conversation.append({'role': 'system', 'content': system_message})
 
         # generate a response
-        response, tokens, processing_time = \
-            do_chatbot_conversation_exchange(conversation, model_name, model_temperature)
+        response, tokens, processing_time = do_chatbot_conversation_exchange(conversation)
 
-        if tokens > MODEL_MAX_TOKENS:
-            ALL_MESSAGES.pop(0)
+        if tokens > app_state.MODEL_MAX_TOKENS:
+            app_state.ALL_MESSAGES.pop(0)
 
-        ALL_MESSAGES.append({'role': 'assistant', 'content': response})
+        app_state.ALL_MESSAGES.append({'role': 'assistant', 'content': response})
         print_chatbot_response(response, tokens, processing_time)
 
 
