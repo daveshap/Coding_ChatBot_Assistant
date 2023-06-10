@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 import textwrap
@@ -8,8 +9,8 @@ from typing import List
 
 import openai
 
-# MODEL_NAME = "gpt-4"
-MODEL_NAME = "gpt-3.5-turbo"
+MODEL_NAME = "gpt-4"
+# MODEL_NAME = "gpt-3.5-turbo"
 MODEL_TEMPERATURE = 0.1
 MODEL_MAX_TOKENS = 7500
 
@@ -51,6 +52,7 @@ def save_response_as_humanreadable_text(response, total_tokens, duration, suffix
         else:
             print(f"Skipping message due to missing 'role' or 'content': {message}")
     save_file(log_file, human_readable_text)
+
 
 def pretty_print_json(conversation: Any) -> Union[str, Any]:
     """
@@ -184,11 +186,23 @@ def print_chatbot_response(response, total_tokens, processing_time):
 def main():
     # instantiate chatbot
     openai.api_key = open_file('key_openai.txt').strip()
-    ALL_MESSAGES = list()
+
+    # parse arguments
+    parser = argparse.ArgumentParser(description="Chatbot using OpenAI API")
+    parser.add_argument("--model", default=MODEL_NAME,
+                        help="Model name (default: %(default)s)")
+    parser.add_argument("--temperature", type=float, default=MODEL_TEMPERATURE,
+                        help="Temperature (default: %(default)s)")
+    args = parser.parse_args()
+
+    model_name = args.model
+    model_temperature = args.temperature
+
     print("\n\n****** IMPORTANT ******\n"
           "Type 'SCRATCHPAD' or 'M' to enter multi-line input mode to update the scratchpad.\n"
           "Type 'END' to save and exit.\n")
 
+    ALL_MESSAGES = list()
     while True:
         text = get_user_input()
         if text is None:
@@ -206,7 +220,7 @@ def main():
 
         # generate a response
         response, tokens, processing_time = \
-            do_chatbot_conversation_exchange(conversation, MODEL_NAME, MODEL_TEMPERATURE)
+            do_chatbot_conversation_exchange(conversation, model_name, model_temperature)
 
         if tokens > MODEL_MAX_TOKENS:
             ALL_MESSAGES.pop(0)
