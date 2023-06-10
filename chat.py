@@ -204,10 +204,16 @@ def main():
                         help="Model name (default: %(default)s)")
     parser.add_argument("--temperature", type=float, default=app_state.MODEL_TEMPERATURE,
                         help="Temperature (default: %(default)s)")
-    args = parser.parse_args()
+    args, unknown = parser.parse_known_args()
 
     app_state.MODEL_NAME = args.model
     app_state.MODEL_TEMPERATURE = args.temperature
+
+    print(f"Current settings:\n"
+          f"Model: {app_state.MODEL_NAME}\n"
+          f"Temperature: {app_state.MODEL_TEMPERATURE}")
+    print("Sample app usage: python chat.py --model gpt-3.5-turbo --temperature 0.2")
+
 
     print("\n\n****** IMPORTANT ******\n"
           "Type 'SCRATCHPAD' or 'M' to enter multi-line input mode to update the scratchpad.\n"
