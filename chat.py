@@ -16,9 +16,9 @@ MODEL_MAX_TOKENS = 7500
 
 ###     logging for debug functions
 
-def save_humanreadable_log(conversation, suffix=""):
+def save_request_as_humanreadable_text(conversation, suffix=""):
     if isinstance(conversation, dict) and "choices" in conversation:
-        conversation = conversation["choices"][0]["message"]
+        conversation = conversation["choices"]
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     log_dir = "log/openai"
@@ -27,6 +27,24 @@ def save_humanreadable_log(conversation, suffix=""):
     log_file = os.path.join(log_dir, f"{timestamp}{suffix}.txt")
     with open(log_file, "w", encoding="utf-8") as f:
         for message in conversation:
+            if 'role' in message and 'content' in message:
+                f.write(f"{message['role'].upper()}:\n{message['content']}\n\n")
+            else:
+                print(f"Skipping message due to missing 'role' or 'content': {message}")
+
+
+def save_response_as_humanreadable_text(response, suffix=""):
+
+    conversation: List[dict] = response["choices"]
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_dir = "log/openai"
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+    log_file = os.path.join(log_dir, f"{timestamp}{suffix}.txt")
+    with open(log_file, "w", encoding="utf-8") as f:
+        for message in conversation:
+            message = message["message"]
             if 'role' in message and 'content' in message:
                 f.write(f"{message['role'].upper()}:\n{message['content']}\n\n")
             else:
@@ -95,7 +113,7 @@ def do_chatbot_conversation_exchange(
 
     # Save the conversation to a log file
     save_json_log(conversation, f'_{model}_request')
-    save_humanreadable_log(conversation, f"_{model}_request")
+    save_request_as_humanreadable_text(conversation, f"_{model}_request")
 
     for retry in range(max_retry):
         try:
@@ -107,7 +125,7 @@ def do_chatbot_conversation_exchange(
             total_tokens = response['usage']['total_tokens']
 
             save_json_log(response, f'_{total_tokens}_response', False)
-            save_humanreadable_log(response, f"_{total_tokens}_response")
+            save_response_as_humanreadable_text(response, f"_{total_tokens}_response")
 
             end_time = time.time()
             processing_time = end_time - start_time
