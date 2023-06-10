@@ -1,23 +1,42 @@
 import openai
 from time import time, sleep
 import textwrap
-import sys
-import yaml
+import os
+from datetime import datetime
+
+
+###     logging for debug functions
+
+def save_humanreadable_log(conversation, suffix=""):
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_dir = "log/openai"
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+    log_file = os.path.join(log_dir, f"{timestamp}{suffix}.txt")
+    with open(log_file, "w", encoding="utf-8") as f:
+        for message in conversation:
+            if 'role' in message and 'content' in message:
+                f.write(f"{message['role'].upper()}:\n{message['content']}\n\n")
+            else:
+                print(f"Skipping message due to missing 'role' or 'content': {message}")
+
+
+def save_json_log(conversation, suffix=""):
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_dir = "log/openai"
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+    log_file = os.path.join(log_dir, f"{timestamp}{suffix}.json")
+
+    # make conversation more readable
+    conversation = str(conversation).replace('},', '},\n')
+    # conversation = str(conversation).replace('\\n', '\\n\n')
+
+    with open(log_file, "w", encoding="utf-8") as f:
+        f.write(str(conversation))
 
 
 ###     file operations
-
-
-def save_yaml(filepath, data):
-    with open(filepath, 'w', encoding='utf-8') as file:
-        yaml.dump(data, file, allow_unicode=True)
-
-
-def open_yaml(filepath):
-    with open(filepath, 'r', encoding='utf-8') as file:
-        data = yaml.load(file, Loader=yaml.FullLoader)
-    return data
-
 
 def save_file(filepath, content):
     with open(filepath, 'w', encoding='utf-8') as outfile:
@@ -44,14 +63,20 @@ def handle_error(error, conversation):
     return False, conversation
 
 
-def chatbot(conversation, model="gpt-4", temperature=0):
+def do_chatbot_conversation_exchange(conversation, model="gpt-4", temperature=0.0):
     max_retry = 7
+
+    # Save the conversation to a log file
+    save_json_log(conversation, f'_{model}_request')
+    save_humanreadable_log(conversation, f"_{model}_request")
 
     for retry in range(max_retry):
         try:
             response = get_response(conversation, model, temperature)
             text = response['choices'][0]['message']['content']
-            return text, response['usage']['total_tokens']
+            total_tokens = response['usage']['total_tokens']
+            save_json_log(response, f'_{total_tokens}_response')
+            return text, total_tokens
         except Exception as oops:
             should_continue, conversation = handle_error(oops, conversation)
             if not should_continue:
@@ -82,7 +107,7 @@ def multi_line_input():
 def get_user_input():
     # get user input
     text = input('\n\n\n[NORMAL] USER:\n')
-    if 'SCRATCHPAD' in text:
+    if 'SCRATCHPAD' == text or 'M' == text:
         text = multi_line_input()
         save_file('scratchpad.txt', text.strip('END').strip())
         print('\n\n#####      Scratchpad updated!')
@@ -121,7 +146,8 @@ def main():
         conversation.append({'role': 'system', 'content': system_message})
 
         # generate a response
-        response, tokens = chatbot(conversation)
+        response, tokens = do_chatbot_conversation_exchange(conversation, "gpt-4", 0.1)
+        # response, tokens = do_chatbot_conversation_exchange(conversation, "gpt-3.5-turbo", 0.5)
         if tokens > 7500:
             ALL_MESSAGES.pop(0)
         ALL_MESSAGES.append({'role': 'assistant', 'content': response})
