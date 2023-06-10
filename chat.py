@@ -27,25 +27,26 @@ def create_log_file(suffix: str) -> str:
 
 def save_request_as_humanreadable_text(conversation, suffix=""):
     log_file = create_log_file(suffix)
-    with open(log_file, "w", encoding="utf-8") as f:
-        for message in conversation:
-            if 'role' in message and 'content' in message:
-                f.write(f"{message['role'].upper()}:\n{message['content']}\n\n")
-            else:
-                print(f"Skipping message due to missing 'role' or 'content': {message}")
+    human_readable_text = ""
+    for message in conversation:
+        if 'role' in message and 'content' in message:
+            human_readable_text += f"{message['role'].upper()}:\n{message['content']}\n\n"
+        else:
+            print(f"Skipping message due to missing 'role' or 'content': {message}")
+    save_file(log_file, human_readable_text)
 
 
 def save_response_as_humanreadable_text(response, suffix=""):
     log_file = create_log_file(suffix)
     conversation: List[dict] = response["choices"]
-    with open(log_file, "w", encoding="utf-8") as f:
-        for message in conversation:
-            message = message["message"]
-            if 'role' in message and 'content' in message:
-                f.write(f"{message['role'].upper()}:\n{message['content']}\n\n")
-            else:
-                print(f"Skipping message due to missing 'role' or 'content': {message}")
-
+    human_readable_text = ""
+    for message in conversation:
+        message = message["message"]
+        if 'role' in message and 'content' in message:
+            human_readable_text += f"{message['role'].upper()}:\n{message['content']}\n\n"
+        else:
+            print(f"Skipping message due to missing 'role' or 'content': {message}")
+    save_file(log_file, human_readable_text)
 
 def pretty_print_json(conversation: Any) -> Union[str, Any]:
     """
