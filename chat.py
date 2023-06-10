@@ -28,16 +28,16 @@ def create_log_file(suffix: str) -> str:
     log_dir = "log/openai"
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
-    log_file = os.path.join(log_dir, f"{timestamp}{suffix}.txt")
+    log_file = os.path.join(log_dir, f"{timestamp}{suffix}")
     return log_file
 
 
-def save_request_as_humanreadable_text(conversation, suffix=""):
+def save_request_as_humanreadable_text(conversation, suffix):
     log_file = create_log_file(suffix)
     human_readable_text = ""
     for message in conversation:
         if 'role' in message and 'content' in message:
-            human_readable_text += f"{message['role'].upper()}:\n{message['content']}\n\n"
+            human_readable_text += f"# {message['role'].upper()}:\n{message['content']}\n\n"
         else:
             print(f"Skipping message due to missing 'role' or 'content': {message}")
     save_file(log_file, human_readable_text)
@@ -46,30 +46,21 @@ def save_request_as_humanreadable_text(conversation, suffix=""):
 def save_response_as_humanreadable_text(response, total_tokens, duration, suffix=""):
     log_file = create_log_file(suffix)
     conversation: List[dict] = response["choices"]
-    human_readable_text = f"Model      : {app_state.MODEL_NAME}\n"
-    human_readable_text += f"Temperature: {app_state.MODEL_TEMPERATURE}\n"
-    human_readable_text += f"Tokens     : {total_tokens}\n"
-    human_readable_text += f"Duration   : {duration}\n"
+    human_readable_text = f"- Model      : {app_state.MODEL_NAME}\n"
+    human_readable_text += f"- Temperature: {app_state.MODEL_TEMPERATURE}\n"
+    human_readable_text += f"- Tokens     : {total_tokens}\n"
+    human_readable_text += f"- Duration   : {duration}\n"
     human_readable_text += "\n\n"
     for message in conversation:
         message = message["message"]
         if 'role' in message and 'content' in message:
-            human_readable_text += f"{message['role'].upper()}:\n{message['content']}\n\n"
+            human_readable_text += f"# {message['role'].upper()}:\n{message['content']}\n\n"
         else:
             print(f"Skipping message due to missing 'role' or 'content': {message}")
     save_file(log_file, human_readable_text)
 
 
 def pretty_print_json(conversation: Any) -> Union[str, Any]:
-    """
-    Convert a Python object to a pretty-printed JSON string.
-
-    Args:
-        conversation (Any): The Python object to convert.
-
-    Returns:
-        Union[str, Any]: The pretty-printed JSON string, or the original object if it cannot be converted.
-    """
     try:
         return json.dumps(conversation, indent=4, sort_keys=True)
     except Exception:
@@ -124,7 +115,7 @@ def do_chatbot_conversation_exchange(conversation: List[dict]) -> tuple[Any, Any
 
     # Save the conversation to a log file
     save_json_log(conversation, f'_{app_state.MODEL_NAME}_request')
-    save_request_as_humanreadable_text(conversation, f"_{app_state.MODEL_NAME}_request")
+    save_request_as_humanreadable_text(conversation, f"_{app_state.MODEL_NAME}_request.md")
 
     for retry in range(max_retry):
         try:
@@ -141,7 +132,7 @@ def do_chatbot_conversation_exchange(conversation: List[dict]) -> tuple[Any, Any
             save_json_log(response, f'_{total_tokens}_response', False)
             save_response_as_humanreadable_text(
                 response, total_tokens, processing_time,
-                f"_{total_tokens}_response",
+                f"_{total_tokens}_response.md",
             )
 
             return text, total_tokens, processing_time
