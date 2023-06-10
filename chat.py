@@ -3,13 +3,13 @@ import os
 import textwrap
 import time
 from datetime import datetime
-from typing import Any, Union, Tuple
-from typing import List, Tuple
+from typing import Any, Union
+from typing import List
 
 import openai
 
-MODEL_NAME = "gpt-4"
-# MODEL_NAME = "gpt-3.5-turbo"
+# MODEL_NAME = "gpt-4"
+MODEL_NAME = "gpt-3.5-turbo"
 MODEL_TEMPERATURE = 0.1
 MODEL_MAX_TOKENS = 7500
 
@@ -36,10 +36,14 @@ def save_request_as_humanreadable_text(conversation, suffix=""):
     save_file(log_file, human_readable_text)
 
 
-def save_response_as_humanreadable_text(response, suffix=""):
+def save_response_as_humanreadable_text(response, total_tokens, duration, suffix=""):
     log_file = create_log_file(suffix)
     conversation: List[dict] = response["choices"]
-    human_readable_text = ""
+    human_readable_text = f"Model      : {MODEL_NAME}\n"
+    human_readable_text += f"Temperature: {MODEL_TEMPERATURE}\n"
+    human_readable_text += f"Tokens     : {total_tokens}\n"
+    human_readable_text += f"Duration   : {duration}\n"
+    human_readable_text += "\n\n"
     for message in conversation:
         message = message["message"]
         if 'role' in message and 'content' in message:
@@ -75,7 +79,7 @@ def save_json_log(conversation, suffix, pretty_print=True):
     save_file(log_file, str(conversation))
 
 
-###     file operations
+# Section:     file operations
 
 def save_file(filepath, content):
     with open(filepath, 'w', encoding='utf-8') as outfile:
@@ -124,8 +128,10 @@ def do_chatbot_conversation_exchange(
             processing_time = end_time - start_time
 
             save_json_log(response, f'_{total_tokens}_response', False)
-            # TODO add processing time, and model name in the response file
-            save_response_as_humanreadable_text(response, f"_{total_tokens}_response")
+            save_response_as_humanreadable_text(
+                response, total_tokens, processing_time,
+                f"_{total_tokens}_response",
+            )
 
             return text, total_tokens, processing_time
         except Exception as oops:
