@@ -3,13 +3,13 @@ import os
 import textwrap
 import time
 from datetime import datetime
-from typing import Any, Union
+from typing import Any, Union, Tuple
 from typing import List, Tuple
 
 import openai
 
-# MODEL_NAME = "gpt-4"
-MODEL_NAME = "gpt-3.5-turbo"
+MODEL_NAME = "gpt-4"
+# MODEL_NAME = "gpt-3.5-turbo"
 MODEL_TEMPERATURE = 0.1
 MODEL_MAX_TOKENS = 7500
 
@@ -34,7 +34,6 @@ def save_request_as_humanreadable_text(conversation, suffix=""):
 
 
 def save_response_as_humanreadable_text(response, suffix=""):
-
     conversation: List[dict] = response["choices"]
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -108,7 +107,7 @@ def handle_error(error, conversation):
 
 def do_chatbot_conversation_exchange(
         conversation: List[dict], model: str = "gpt-4", temperature: float = 0.0,
-) -> Tuple[str, int]:
+) -> tuple[Any, Any, float]:
     max_retry: int = 7
 
     # Save the conversation to a log file
@@ -118,7 +117,7 @@ def do_chatbot_conversation_exchange(
     for retry in range(max_retry):
         try:
             start_time = time.time()
-            print("Processing...")
+            print("INFO: Processing...")
 
             response = get_response(conversation, model, temperature)
             text = response['choices'][0]['message']['content']
@@ -129,9 +128,8 @@ def do_chatbot_conversation_exchange(
 
             end_time = time.time()
             processing_time = end_time - start_time
-            print(f"Processing done. Time taken: {processing_time:.2f} seconds")
 
-            return text, total_tokens
+            return text, total_tokens, processing_time
         except Exception as oops:
             should_continue, conversation = handle_error(oops, conversation)
             if not should_continue:
@@ -161,7 +159,7 @@ def multi_line_input():
 
 def get_user_input():
     # get user input
-    text = input(f'\n\n\n{MODEL_NAME}: [NORMAL] USER:\n')
+    text = input(f'\n\n\nPROMPT for {MODEL_NAME} as [NORMAL] USER:\n')
     if 'SCRATCHPAD' == text or 'M' == text:
         text = multi_line_input()
         save_file('scratchpad.txt', text.strip('END').strip())
@@ -170,11 +168,12 @@ def get_user_input():
     return text
 
 
-def print_chatbot_response(response):
+def print_chatbot_response(response, total_tokens, processing_time):
     print('\n\n\n\nCHATBOT:\n')
     formatted_lines = [textwrap.fill(line, width=120) for line in response.split('\n')]
     formatted_text = '\n'.join(formatted_lines)
     print(formatted_text)
+    print(f'\n\nINFO: {MODEL_NAME}: {total_tokens} tokens, {processing_time:.2f} seconds')
 
 
 def main():
@@ -182,7 +181,7 @@ def main():
     openai.api_key = open_file('key_openai.txt').strip()
     ALL_MESSAGES = list()
     print("\n\n****** IMPORTANT ******\n"
-          "Type 'SCRATCHPAD' to enter multi-line input mode to update the scratchpad.\n"
+          "Type 'SCRATCHPAD' or 'M' to enter multi-line input mode to update the scratchpad.\n"
           "Type 'END' to save and exit.\n")
 
     while True:
@@ -201,11 +200,14 @@ def main():
         conversation.append({'role': 'system', 'content': system_message})
 
         # generate a response
-        response, tokens = do_chatbot_conversation_exchange(conversation, MODEL_NAME, MODEL_TEMPERATURE)
+        response, tokens, processing_time = \
+            do_chatbot_conversation_exchange(conversation, MODEL_NAME, MODEL_TEMPERATURE)
+
         if tokens > MODEL_MAX_TOKENS:
             ALL_MESSAGES.pop(0)
+
         ALL_MESSAGES.append({'role': 'assistant', 'content': response})
-        print_chatbot_response(response)
+        print_chatbot_response(response, tokens, processing_time)
 
 
 if __name__ == '__main__':
