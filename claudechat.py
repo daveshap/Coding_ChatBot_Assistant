@@ -12,7 +12,7 @@ import anthropic
 
 class AppState:
     def __init__(self):
-        self.MODEL_NAME = "claude-1"
+        self.MODEL_NAME = "claude-1-100k"
         self.MODEL_TEMPERATURE = 0.1
         self.MODEL_MAX_TOKENS = 7500
         self.MODEL_MAX_MESSAGES = 20
@@ -193,7 +193,7 @@ def main():
     # instantiate chatbot
 
     # parse arguments
-    parser = argparse.ArgumentParser(description="Chatbot using OpenAI API")
+    parser = argparse.ArgumentParser(description="Chatbot using Anthropic Claude API")
     parser.add_argument("--model", default=app_state.MODEL_NAME,
                         help="Model name (default: %(default)s)")
     parser.add_argument("--temperature", type=float, default=app_state.MODEL_TEMPERATURE,
@@ -245,6 +245,6 @@ def main():
 
 
 if __name__ == '__main__':
-    api_key = read_file_content('key_openai.txt').strip()
+    api_key = read_file_content('key_claude.txt').strip()
     openai = anthropic.Client(api_key)
     main()

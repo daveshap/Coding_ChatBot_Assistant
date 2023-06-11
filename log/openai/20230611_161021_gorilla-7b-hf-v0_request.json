@@ -1,0 +1,10 @@
+[
+    {
+        "content": "i'd like to translate english to french",
+        "role": "user"
+    },
+    {
+        "content": "default",
+        "role": "system"
+    }
+]

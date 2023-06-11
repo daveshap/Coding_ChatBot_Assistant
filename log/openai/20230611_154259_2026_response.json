@@ -1,0 +1,21 @@
+{
+  "id": "chatcmpl-7QO3pW3U060JUljoAe92Px4jtvWs9",
+  "object": "chat.completion",
+  "created": 1686523373,
+  "model": "gpt-4-0314",
+  "usage": {
+    "prompt_tokens": 1990,
+    "completion_tokens": 36,
+    "total_tokens": 2026
+  },
+  "choices": [
+    {
+      "message": {
+        "role": "assistant",
+        "content": "It looks like you have a script for a chatbot using OpenAI API. How can I help you with this? Please provide instructions or ask a question related to the code."
+      },
+      "finish_reason": "stop",
+      "index": 0
+    }
+  ]
+}
