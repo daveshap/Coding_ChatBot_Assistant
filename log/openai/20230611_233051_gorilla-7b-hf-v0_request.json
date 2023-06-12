@@ -1,0 +1,26 @@
+[
+    {
+        "content": "i want a picture of a cute kitty",
+        "role": "user"
+    },
+    {
+        "content": "default",
+        "role": "system"
+    },
+    {
+        "content": "i want a picture of a cute kitty",
+        "role": "user"
+    },
+    {
+        "content": "<<<domain>>>: Multimodal Text-to-Image\n",
+        "role": "assistant"
+    },
+    {
+        "content": "i want the right api calls to generate a picture of a cute kitty",
+        "role": "user"
+    },
+    {
+        "content": "default",
+        "role": "system"
+    }
+]

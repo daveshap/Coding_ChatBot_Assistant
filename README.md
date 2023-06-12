@@ -31,7 +31,7 @@ to provide additional context for more accurate and helpful responses!
 ## Setup
 
 1. Install OpenAI if not already, should have no other dependencies: `pip install openai --upgrade`, or alternatively see instructions below for virtual environment setup.
-2. Create `key_openai.txt` and populate your OpenAI key. Note, you need to have access to GPT-4 API. Note, some operating systems require 
+2. Create `key_openai.txt` and populate your OpenAI key. Create 'key_claude.txt' in order to use the Anthropic claude model. Note, you need to have access to GPT-4 API. Anthropic claude is currently set to the 'claude-v1.3-100k' model, which requires an Anthropic key approved for the 100k context claude models. Gorilla LLM calls an existing API endpoint hosted by the creators and does not require an API key.
 
 ### Setup using virtual environment
 1. cd into the project
@@ -41,7 +41,9 @@ to provide additional context for more accurate and helpful responses!
 
 ## Usage
 
-1. Run `python chat.py`
+1. Run `python chat.py` to use OpenAI's GPT-4 model.
+2. Run 'python claudechat.py' to use Anthropic's claude-v1.3-100k model.
+3. Run 'python gorillachat.py' to use Gorilla LLM, a huggingface model that returns a python snippet and a valid API call for a huggingface inference API to accomplish the task outlined in the query. 
 2. Type `SCRATCHPAD` or `M` to enter scratchpad update mode. This will allow you to copy/paste multiple lines. Type `END` on the last line to save and exit.
 
 ## Example Output:

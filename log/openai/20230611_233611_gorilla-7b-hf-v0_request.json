@@ -1,0 +1,10 @@
+[
+    {
+        "content": "i want a cute kitty",
+        "role": "user"
+    },
+    {
+        "content": "default",
+        "role": "system"
+    }
+]

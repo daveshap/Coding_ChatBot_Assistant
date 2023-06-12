@@ -1,0 +1,10 @@
+[
+    {
+        "content": "i wanna cute kitty",
+        "role": "user"
+    },
+    {
+        "content": "default",
+        "role": "system"
+    }
+]

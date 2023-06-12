@@ -1,0 +1,8 @@
+{
+    "python.testing.pytestArgs": [
+        "."
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "python.testing.pytestPath": "D:/repos/Coding_Chatbot_Assistant/.venv/bin/pytest"
+}

@@ -1,0 +1,21 @@
+{
+  "id": "chatcmpl-3dD5g2Wa24o7hpDB3FuWCw",
+  "object": "chat.completion",
+  "created": 1686551464,
+  "model": "gorilla-7b-hf-v0",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "<<<domain>>>: Natural Language Processing Text2Text Generation\n\n"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 537,
+    "total_tokens": 553,
+    "completion_tokens": 16
+  }
+}

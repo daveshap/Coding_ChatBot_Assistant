@@ -1,0 +1,21 @@
+{
+  "id": "chatcmpl-3ePqoPBXYAFDr8gYruWAmN",
+  "object": "chat.completion",
+  "created": 1686551425,
+  "model": "gorilla-7b-hf-v0",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "<<<domain>>>: Multimodal Text-to-Image\n"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 383,
+    "total_tokens": 399,
+    "completion_tokens": 16
+  }
+}
