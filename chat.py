@@ -1,3 +1,4 @@
+from halo import Halo
 import openai
 from time import time, sleep
 import textwrap
@@ -31,7 +32,7 @@ def open_file(filepath):
 ###     API functions
 
 
-def chatbot(conversation, model="gpt-4", temperature=0):
+def chatbot(conversation, model="gpt-4-0613", temperature=0):
     max_retry = 7
     retry = 0
     while True:
@@ -75,7 +76,7 @@ if __name__ == '__main__':
     
     while True:
         # get user input
-        text = input('\n\n\n[NORMAL] USER:\n')
+        text = input('\n\n\n[NORMAL] USER:\n\n')
         
         # check if scratchpad updated, continue
         if 'SCRATCHPAD' in text:
@@ -95,7 +96,10 @@ if __name__ == '__main__':
         conversation.append({'role': 'system', 'content': system_message})
 
         # generate a response
+        spinner = Halo(text='Coding...', spinner='dots')
+        spinner.start()
         response, tokens = chatbot(conversation)
+        spinner.stop()
         if tokens > 7500:
             ALL_MESSAGES.pop(0)
         ALL_MESSAGES.append({'role': 'assistant', 'content': response})
